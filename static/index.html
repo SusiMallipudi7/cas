@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAS Assessment Form - POC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        .optional {
+            color: #95a5a6;
+            font-weight: normal;
+            font-size: 12px;
+        }
+
+        input[type="text"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .helper-text {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        input.invalid,
+        select.invalid {
+            border-color: #e74c3c;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-submit:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .zone-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        .zone-1 { background: #2ecc71; color: white; }
+        .zone-2 { background: #f39c12; color: white; }
+        .zone-3 { background: #e67e22; color: white; }
+        .zone-4 { background: #e74c3c; color: white; }
+
+        .justification {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .justification h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .justification-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .metric {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-top: 5px;
+        }
+
+        .error-message {
+            display: none;
+            background: #fee;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .error-message h4 {
+            color: #e74c3c;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Context Autonomy Service (CAS)</h1>
+            <p>Phase 1 POC - Assessment Form</p>
+        </div>
+
+        <div class="form-container">
+            <form id="assessmentForm">
+                <!-- Action Type -->
+                <div class="form-group">
+                    <label for="actionType">
+                        Action Type <span class="required">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="actionType"
+                        name="actionType"
+                        placeholder="e.g., generateLocators, refinement, evaluate"
+                        required
+                    >
+                    <div class="helper-text">Enter the QE activity step name</div>
+                    <div class="error" id="actionTypeError">This field is required</div>
+                </div>
+
+                <!-- Target Scope -->
+                <div class="form-group">
+                    <label for="targetScope">
+                        Target Scope <span class="required">*</span>
+                    </label>
+                    <select id="targetScope" name="targetScope" required>
+                        <option value="">-- Select Scope --</option>
+                        <option value="enterprise-wide">Enterprise-wide</option>
+                        <option value="functional-area">Functional Area</option>
+                        <option value="single-requirement">Single Requirement</option>
+                        <option value="intra-step">Intra-step</option>
+                    </select>
+                    <div class="helper-text">Impact scope of the action</div>
+                    <div class="error" id="targetScopeError">Please select a scope</div>
+                </div>
+
+                <!-- Knowledge Dependencies -->
+                <div class="form-group">
+                    <label for="knowledgeDeps">
+                        Knowledge Dependencies <span class="optional">(optional)</span>
+                    </label>
+                    <textarea
+                        id="knowledgeDeps"
+                        name="knowledgeDeps"
+                        placeholder='Enter dependencies, one per line. e.g.,&#10;USER_STORY&#10;ACCEPTANCE_CRITERIA&#10;REQUIREMENTS'
+                    ></textarea>
+                    <div class="helper-text">Artifacts required to perform the action (optional for POC)</div>
+                </div>
+
+                <!-- Reversibility Hint -->
+                <div class="form-group">
+                    <label for="reversibilityHint">
+                        Reversibility Hint <span class="required">*</span>
+                    </label>
+                    <select id="reversibilityHint" name="reversibilityHint" required>
+                        <option value="">-- Select Reversibility --</option>
+                        <option value="trivially reversible">Trivially Reversible</option>
+                        <option value="reversible with cost">Reversible with Cost</option>
+                        <option value="irreversible">Irreversible</option>
+                    </select>
+                    <div class="helper-text">How easily can this action be reversed?</div>
+                    <div class="error" id="reversibilityHintError">Please select reversibility</div>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    Assess Action
+                </button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px; color: #7f8c8d;">Processing assessment...</p>
+            </div>
+
+            <div class="error-message" id="errorMessage">
+                <h4>❌ Assessment Failed</h4>
+                <p id="errorText"></p>
+            </div>
+
+            <div class="result" id="result">
+                <h3>📊 Assessment Result</h3>
+                <div>
+                    <strong>Assigned Zone:</strong>
+                    <div class="zone-badge" id="zoneBadge"></div>
+                </div>
+
+                <div class="justification">
+                    <h4>JUSTIFICATION</h4>
+                    <div class="justification-grid" id="justificationGrid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('assessmentForm');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const errorMessage = document.getElementById('errorMessage');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Form validation
+        function validateField(field) {
+            const value = field.value.trim();
+            const errorDiv = document.getElementById(field.id + 'Error');
+
+            if (field.hasAttribute('required') && !value) {
+                field.classList.add('invalid');
+                if (errorDiv) errorDiv.classList.add('show');
+                return false;
+            } else {
+                field.classList.remove('invalid');
+                if (errorDiv) errorDiv.classList.remove('show');
+                return true;
+            }
+        }
+
+        // Add real-time validation
+        ['actionType', 'targetScope', 'reversibilityHint'].forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            field.addEventListener('blur', () => validateField(field));
+            field.addEventListener('change', () => validateField(field));
+        });
+
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Validate all required fields
+            const actionType = document.getElementById('actionType');
+            const targetScope = document.getElementById('targetScope');
+            const reversibilityHint = document.getElementById('reversibilityHint');
+
+            const isValid = [actionType, targetScope, reversibilityHint]
+                .every(field => validateField(field));
+
+            if (!isValid) return;
+
+            // Hide previous results
+            result.classList.remove('show');
+            errorMessage.classList.remove('show');
+
+            // Show loading
+            loading.classList.add('show');
+            submitBtn.disabled = true;
+
+            // Parse knowledge dependencies
+            const knowledgeDepsText = document.getElementById('knowledgeDeps').value.trim();
+            const knowledgeDeps = knowledgeDepsText
+                ? knowledgeDepsText.split('\n').map(s => s.trim()).filter(s => s)
+                : [];
+
+            // Build request payload
+            const payload = {
+                request_id: `req-${Date.now()}`,
+                workflow_instance_id: `workflow-${Date.now()}`,
+                action_descriptor: {
+                    type: actionType.value.trim(),
+                    target_scope: targetScope.value,
+                    knowledge_dependencies: knowledgeDeps,
+                    reversibility_hint: reversibilityHint.value
+                },
+                context_snapshot_ref: `snapshot-${Date.now()}`,
+                caller_service: "cas-poc-ui",
+                trace_id: `trace-${Date.now()}`
+            };
+
+            try {
+                const response = await fetch('/v1/assess', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Assessment failed');
+                }
+
+                // Display results
+                displayResults(data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('errorText').textContent = error.message;
+                errorMessage.classList.add('show');
+            } finally {
+                loading.classList.remove('show');
+                submitBtn.disabled = false;
+            }
+        });
+
+        function displayResults(data) {
+            // Set zone badge
+            const zoneBadge = document.getElementById('zoneBadge');
+            zoneBadge.textContent = data.zone;
+            zoneBadge.className = 'zone-badge zone-' + data.zone.split('_')[1];
+
+            // Build justification grid
+            const justificationGrid = document.getElementById('justificationGrid');
+            justificationGrid.innerHTML = `
+                <div class="metric">
+                    <div class="metric-label">Risk Score</div>
+                    <div class="metric-value">${data.risk_score.toFixed(2)}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Risk Band</div>
+                    <div class="metric-value">${data.risk_band}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Cognitive Complexity</div>
+                    <div class="metric-value">${data.cognitive_complexity}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Operational Complexity</div>
+                    <div class="metric-value">${data.operational_complexity}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Platform Confidence</div>
+                    <div class="metric-value">${data.platform_confidence.toFixed(2)}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Rule Matched</div>
+                    <div class="metric-value">Rule ${data.justification.rule_matched}</div>
+                </div>
+            `;
+
+            result.classList.add('show');
+            result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    </script>
+</body>
+</html>
