@@ -3,7 +3,8 @@ Sample test script to call CAS API
 Run the FastAPI server first: uvicorn main:app --reload
 Then run this script: python test_request.py
 """
-import requests
+# pyrefly: ignore [missing-import]
+import httpx
 import json
 
 # Sample request payload
@@ -22,7 +23,7 @@ payload = {
 }
 
 # Send POST request
-response = requests.post(
+response = httpx.post(
     "http://localhost:8000/v1/assess",
     json=payload
 )
