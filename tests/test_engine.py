@@ -1,7 +1,7 @@
 # pyrefly: ignore [missing-import]
 import pytest
 from models import (
-    AssessmentRequest, ActionDescriptor,
+    AssessmentRequest, ActionDescriptor, ActionType,
     ReversibilityHint, ComplexityLevel, RiskBand, AutonomyZone
 )
 from engine import process_assessment
@@ -12,7 +12,7 @@ def get_base_request(target_scope="reporting_ui") -> AssessmentRequest:
         request_id="req-123",
         workflow_instance_id="wf-456",
         action_descriptor=ActionDescriptor(
-            type="UPDATE_SCHEMA",
+            type=ActionType.TEST_CASE_AUTOMATION,
             target_scope=target_scope,
             knowledge_dependencies=["db_schema_v2"],
             reversibility_hint=ReversibilityHint.TRIVIALLY_REVERSIBLE
@@ -54,9 +54,9 @@ def test_platform_confidence_poc():
 
 def test_rule_1_zone_3():
     """Rule 1: If platform_confidence < 0.3 OR cognitive_complexity == HIGH -> ZONE_3"""
-    # Test cognitive complexity = HIGH via RCA action type
+    # Test cognitive complexity = HIGH via Analysis action type
     req = get_base_request()
-    req.action_descriptor.type = "RCA_ANALYSIS"
+    req.action_descriptor.type = ActionType.ANALYSIS
     resp = process_assessment(req)
     assert resp.zone == AutonomyZone.ZONE_3
     assert resp.justification.rule_matched == 1

@@ -1,8 +1,21 @@
 from enum import Enum
-# pyrefly: ignore [missing-import]
-from pydantic import BaseModel, Field
-from typing import List, Optional
-import uuid
+from pydantic import BaseModel
+from typing import List, Optional, Union
+
+class ActionType(str, Enum):
+    USER_STORY_REFINEMENT = "User Story Refinement"
+    ANALYSIS = "Analysis"
+    ASSESSMENT = "Assessment"
+    TEST_CASE_DESIGN = "Test Case Design"
+    TEST_CASE_GENERATION = "Test Case Generation"
+    TEST_CASE_AUTOMATION = "Test Case Automation"
+    REQUIREMENTS_REVIEW = "Requirements Review"
+    DEFECT_ANALYSIS = "Defect Analysis"
+    RISK_ASSESSMENT = "Risk Assessment"
+    DOCUMENTATION = "Documentation"
+    CODE_REVIEW = "Code Review"
+    GENERATE_LOCATORS = "generateLocators"
+    OTHER = "Other"
 
 class ReversibilityHint(str, Enum):
     IRREVERSIBLE_EFFECTS = "irreversible"
@@ -26,22 +39,10 @@ class AutonomyZone(str, Enum):
     ZONE_4 = "ZONE_4"
 
 class ActionDescriptor(BaseModel):
-    type: str
+    type: ActionType
     target_scope: str
-    knowledge_dependencies: List[str] = []
+    knowledge_dependencies: Union[float, List[str]]
     reversibility_hint: ReversibilityHint
-
-# Additional context passed either through the upstream parameter generator or another layer.
-class ContextMetrics(BaseModel):
-    action_consequence_scope: float = Field(default=0.2, ge=0.0, le=1.0) # Enterprise-wide=1.0, Functional=0.7, Single=0.4, Intra=0.2
-    stakeholder_visibility: float = Field(default=0.3, ge=0.0, le=1.0) # Release=1.0, Lead=0.6, IC=0.3
-    precedent_availability: float = Field(default=0.1, ge=0.0, le=1.0) # 1.0 down to 0.1
-    context_confidence: float = Field(default=1.0, ge=0.0, le=1.0)
-    knowledge_coverage: float = Field(default=1.0, ge=0.0, le=1.0)
-    precedent_strength: float = Field(default=0.0, ge=0.0, le=1.0)
-    cognitive_complexity: ComplexityLevel = ComplexityLevel.LOW
-    operational_complexity: ComplexityLevel = ComplexityLevel.LOW
-    uninitialized_knowledge_domains: bool = False # Flag for confidence floor invariant
 
 class AssessmentRequest(BaseModel):
     request_id: str

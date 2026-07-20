@@ -61,7 +61,12 @@ def calculate_risk(request: AssessmentRequest) -> Tuple[float, RiskBand]:
 
 def classify_complexity(request: AssessmentRequest) -> Tuple[ComplexityLevel, ComplexityLevel]:
     # 1. Cognitive Complexity
-    num_deps = len(request.action_descriptor.knowledge_dependencies)
+    deps = request.action_descriptor.knowledge_dependencies
+    if isinstance(deps, float):
+        num_deps = int(deps * 10)
+    else:
+        num_deps = len(deps)
+        
     action_type_lower = request.action_descriptor.type.lower()
     is_rca_analysis = any(kw in action_type_lower for kw in ["rca", "analysis", "assessment"])
 

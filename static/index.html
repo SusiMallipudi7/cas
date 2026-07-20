@@ -268,15 +268,24 @@
                     <label for="actionType">
                         Action Type <span class="required">*</span>
                     </label>
-                    <input
-                        type="text"
-                        id="actionType"
-                        name="actionType"
-                        placeholder="e.g., generateLocators, refinement, evaluate"
-                        required
-                    >
-                    <div class="helper-text">Enter the QE activity step name</div>
-                    <div class="error" id="actionTypeError">This field is required</div>
+                    <select id="actionType" name="actionType" required>
+                        <option value="">-- Select Action Type --</option>
+                        <option value="User Story Refinement">User Story Refinement</option>
+                        <option value="Analysis">Analysis</option>
+                        <option value="Assessment">Assessment</option>
+                        <option value="Test Case Design">Test Case Design</option>
+                        <option value="Test Case Generation">Test Case Generation</option>
+                        <option value="Test Case Automation">Test Case Automation</option>
+                        <option value="Requirements Review">Requirements Review</option>
+                        <option value="Defect Analysis">Defect Analysis</option>
+                        <option value="Risk Assessment">Risk Assessment</option>
+                        <option value="Documentation">Documentation</option>
+                        <option value="Code Review">Code Review</option>
+                        <option value="generateLocators">generateLocators</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div class="helper-text">Select the QE activity type</div>
+                    <div class="error" id="actionTypeError">Please select an action type</div>
                 </div>
 
                 <!-- Target Scope -->
@@ -298,14 +307,19 @@
                 <!-- Knowledge Dependencies -->
                 <div class="form-group">
                     <label for="knowledgeDeps">
-                        Knowledge Dependencies <span class="optional">(optional)</span>
+                        Knowledge Dependencies: <span id="sliderValue">0.5</span>
                     </label>
-                    <textarea
-                        id="knowledgeDeps"
-                        name="knowledgeDeps"
-                        placeholder='Enter dependencies, one per line. e.g.,&#10;USER_STORY&#10;ACCEPTANCE_CRITERIA&#10;REQUIREMENTS'
-                    ></textarea>
-                    <div class="helper-text">Artifacts required to perform the action (optional for POC)</div>
+                    <input 
+                        type="range" 
+                        id="knowledgeDeps" 
+                        name="knowledgeDeps" 
+                        min="0" 
+                        max="1" 
+                        step="0.1" 
+                        value="0.5"
+                        style="width: 100%; cursor: pointer;"
+                    >
+                    <div class="helper-text">Move slider from 0.0 to 1.0 (representing density of dependencies)</div>
                 </div>
 
                 <!-- Reversibility Hint -->
@@ -383,6 +397,13 @@
             field.addEventListener('change', () => validateField(field));
         });
 
+        // Update slider label on input
+        const knowledgeDepsSlider = document.getElementById('knowledgeDeps');
+        const sliderValueLabel = document.getElementById('sliderValue');
+        knowledgeDepsSlider.addEventListener('input', (e) => {
+            sliderValueLabel.textContent = e.target.value;
+        });
+
         // Form submission
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -405,11 +426,8 @@
             loading.classList.add('show');
             submitBtn.disabled = true;
 
-            // Parse knowledge dependencies
-            const knowledgeDepsText = document.getElementById('knowledgeDeps').value.trim();
-            const knowledgeDeps = knowledgeDepsText
-                ? knowledgeDepsText.split('\n').map(s => s.trim()).filter(s => s)
-                : [];
+            // Parse knowledge dependencies as float
+            const knowledgeDeps = parseFloat(knowledgeDepsSlider.value);
 
             // Build request payload
             const payload = {
