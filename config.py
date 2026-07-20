@@ -29,7 +29,9 @@ class ConfigCache:
             "system_area_risk": {
                 "core_db": 0.9,
                 "auth_service": 0.8,
-                "reporting_ui": 0.2
+                "reporting_ui": 0.2,
+                "single-requirement": 0.2,
+                "intra-step": 0.1
             }
         }
 
