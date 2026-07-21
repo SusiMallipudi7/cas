@@ -44,6 +44,8 @@ class ActionDescriptor(BaseModel):
     target_scope: str
     knowledge_dependencies: Union[float, List[str]]
     reversibility_hint: ReversibilityHint
+    system_risk: Optional[float] = None
+    precedent_avail: Optional[float] = None
 
 class AssessmentRequest(BaseModel):
     request_id: str
@@ -60,6 +62,8 @@ class Justification(BaseModel):
     operational_complexity: ComplexityLevel
     platform_confidence: float
     rule_matched: int
+    system_risk: float
+    precedent_avail: float
 
 class AssessmentResponse(BaseModel):
     request_id: str
@@ -75,3 +79,5 @@ class AssessmentResponse(BaseModel):
     formula_version: str
     assessed_at: str
     assessor_identity: str
+    system_risk: float
+    precedent_avail: float

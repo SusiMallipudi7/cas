@@ -15,7 +15,9 @@ payload = {
         "type": "generateLocators",
         "target_scope": "functional-area",
         "knowledge_dependencies": ["USER_STORY", "ACCEPTANCE_CRITERIA"],
-        "reversibility_hint": "reversible with cost"
+        "reversibility_hint": "reversible with cost",
+        "system_risk": 0.7,
+        "precedent_avail": 0.4
     },
     "context_snapshot_ref": "snapshot-ref-123",
     "caller_service": "qmentis-ui",

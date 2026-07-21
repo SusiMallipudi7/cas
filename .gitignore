@@ -50,3 +50,6 @@ EHthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 .DS_Store
+
+# Audit Logs Folder
+audit_logs/

@@ -21,6 +21,17 @@ class MockAuditPublisher(AuditPublisher):
         if self.should_fail:
             raise AuditPublishError("Message broker failed to acknowledge the audit log")
         
+        # Write to JSON file in audit_logs directory
+        import os
+        os.makedirs("audit_logs", exist_ok=True)
+        request_id = fragment.get("request", {}).get("request_id", f"unknown-{int(time.time())}")
+        file_path = os.path.join("audit_logs", f"audit_{request_id}.json")
+        try:
+            with open(file_path, "w") as f:
+                json.dump(fragment, f, indent=2)
+        except Exception as e:
+            raise AuditPublishError(f"Failed to write audit file: {e}")
+        
         # Log to stdout as proof of audit
         logger.info(f"AUDIT_FRAGMENT: {json.dumps(fragment)}")
         return True

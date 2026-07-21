@@ -273,6 +273,108 @@
             color: #e74c3c;
             margin-bottom: 10px;
         }
+
+        .progress-container {
+            background: #e2e8f0;
+            border-radius: 4px;
+            height: 10px;
+            width: 100%;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease-out;
+        }
+
+        /* Custom Multi-select Dropdown styles */
+        .multiselect-dropdown {
+            position: relative;
+            width: 100%;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            background-color: white;
+            cursor: pointer;
+            user-select: none;
+            transition: border-color 0.3s;
+        }
+
+        .multiselect-dropdown:focus-within {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .multiselect-header {
+            padding: 12px;
+            font-size: 14px;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .multiselect-header::after {
+            content: "▼";
+            font-size: 10px;
+            color: #7f8c8d;
+            transition: transform 0.2s;
+        }
+
+        .multiselect-dropdown.open .multiselect-header::after {
+            transform: rotate(180deg);
+        }
+
+        .multiselect-options {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: -2px;
+            right: -2px;
+            background: white;
+            border: 2px solid #667eea;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .multiselect-dropdown.open .multiselect-options {
+            display: block;
+        }
+
+        .multiselect-options label {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            margin: 0;
+            font-weight: normal;
+            font-size: 14px;
+            color: #555;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .multiselect-options label:last-child {
+            border-bottom: none;
+        }
+
+        .multiselect-options label:hover {
+            background-color: #f7fafc;
+        }
+
+        .multiselect-options input[type="checkbox"] {
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            accent-color: #667eea;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -329,19 +431,22 @@
 
                 <!-- Knowledge Dependencies -->
                 <div class="form-group">
-                    <label for="knowledgeDeps">
-                        Knowledge Dependencies <span class="optional">(Hold Ctrl/Cmd to select multiple)</span>
+                    <label>
+                        Knowledge Dependencies
                     </label>
-                    <select id="knowledgeDeps" name="knowledgeDeps" multiple style="height: 150px;">
-                        <option value="User Story">User Story</option>
-                        <option value="Acceptance Criteria">Acceptance Criteria</option>
-                        <option value="System Architecture">System Architecture</option>
-                        <option value="Database Schema">Database Schema</option>
-                        <option value="API Specification">API Specification</option>
-                        <option value="Test Plan">Test Plan</option>
-                        <option value="UI Wireframe">UI Wireframe</option>
-                        <option value="Code Diff">Code Diff</option>
-                    </select>
+                    <div class="multiselect-dropdown" id="knowledgeDepsDropdown" tabindex="0">
+                        <div class="multiselect-header" id="multiselectHeader">Select Dependencies...</div>
+                        <div class="multiselect-options" id="multiselectOptions">
+                            <label><input type="checkbox" value="User Story"> User Story</label>
+                            <label><input type="checkbox" value="Acceptance Criteria"> Acceptance Criteria</label>
+                            <label><input type="checkbox" value="System Architecture"> System Architecture</label>
+                            <label><input type="checkbox" value="Database Schema"> Database Schema</label>
+                            <label><input type="checkbox" value="API Specification"> API Specification</label>
+                            <label><input type="checkbox" value="Test Plan"> Test Plan</label>
+                            <label><input type="checkbox" value="UI Wireframe"> UI Wireframe</label>
+                            <label><input type="checkbox" value="Code Diff"> Code Diff</label>
+                        </div>
+                    </div>
                     <div class="helper-text">Select one or more artifacts required for the action</div>
                 </div>
 
@@ -358,6 +463,24 @@
                     </select>
                     <div class="helper-text">How easily can this action be reversed?</div>
                     <div class="error" id="reversibilityHintError">Please select reversibility</div>
+                </div>
+
+                <!-- System Risk Slider -->
+                <div class="form-group">
+                    <label for="systemRisk">
+                        System Risk: <span id="systemRiskVal" style="font-weight: bold; color: #667eea;">0.5</span>
+                    </label>
+                    <input type="range" id="systemRisk" name="systemRisk" min="0" max="1" step="0.1" value="0.5" style="width: 100%; cursor: pointer;">
+                    <div class="helper-text">Select system risk level (0.0 to 1.0)</div>
+                </div>
+
+                <!-- Precedent Availability Slider -->
+                <div class="form-group">
+                    <label for="precedentAvail">
+                        Precedent Availability: <span id="precedentAvailVal" style="font-weight: bold; color: #667eea;">1.0</span>
+                    </label>
+                    <input type="range" id="precedentAvail" name="precedentAvail" min="0" max="1" step="0.1" value="1.0" style="width: 100%; cursor: pointer;">
+                    <div class="helper-text">Select precedent availability level (0.0 to 1.0)</div>
                 </div>
 
                 <button type="submit" class="btn-submit" id="submitBtn">
@@ -420,6 +543,52 @@
             field.addEventListener('change', () => validateField(field));
         });
 
+        const systemRiskInput = document.getElementById('systemRisk');
+        const systemRiskVal = document.getElementById('systemRiskVal');
+        systemRiskInput.addEventListener('input', () => {
+            systemRiskVal.textContent = parseFloat(systemRiskInput.value).toFixed(1);
+        });
+
+        const precedentAvailInput = document.getElementById('precedentAvail');
+        const precedentAvailVal = document.getElementById('precedentAvailVal');
+        precedentAvailInput.addEventListener('input', () => {
+            precedentAvailVal.textContent = parseFloat(precedentAvailInput.value).toFixed(1);
+        });
+
+        // Custom multi-select dropdown handlers
+        const dropdown = document.getElementById('knowledgeDepsDropdown');
+        const header = document.getElementById('multiselectHeader');
+        const checkboxes = dropdown.querySelectorAll('.multiselect-options input[type="checkbox"]');
+
+        dropdown.addEventListener('click', (e) => {
+            if (e.target.closest('.multiselect-options')) return;
+            dropdown.classList.toggle('open');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+
+        function updateHeader() {
+            const selected = [];
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    selected.push(cb.value);
+                }
+            });
+            if (selected.length > 0) {
+                header.textContent = selected.join(', ');
+            } else {
+                header.textContent = 'Select Dependencies...';
+            }
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateHeader);
+        });
+
         // Form submission
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -442,9 +611,10 @@
             loading.classList.add('show');
             submitBtn.disabled = true;
 
-            // Parse knowledge dependencies as list of strings from multi-select
-            const knowledgeDepsSelect = document.getElementById('knowledgeDeps');
-            const knowledgeDeps = Array.from(knowledgeDepsSelect.selectedOptions).map(opt => opt.value);
+            // Parse knowledge dependencies from checkbox dropdown
+            const knowledgeDeps = Array.from(checkboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
 
             // Build request payload
             const payload = {
@@ -454,7 +624,9 @@
                     type: actionType.value.trim(),
                     target_scope: targetScope.value,
                     knowledge_dependencies: knowledgeDeps,
-                    reversibility_hint: reversibilityHint.value
+                    reversibility_hint: reversibilityHint.value,
+                    system_risk: parseFloat(systemRiskInput.value),
+                    precedent_avail: parseFloat(precedentAvailInput.value)
                 },
                 context_snapshot_ref: `snapshot-${Date.now()}`,
                 caller_service: "cas-poc-ui",

@@ -132,3 +132,21 @@ def test_default_zone_1():
     resp = process_assessment(req)
     assert resp.zone == AutonomyZone.ZONE_1
     assert resp.justification.rule_matched == 6
+
+def test_custom_system_risk_and_precedent_avail():
+    """Verify that passing custom system_risk and precedent_avail correctly overrides configuration/defaults."""
+    req = get_base_request(target_scope="reporting_ui")
+    # Pass custom system_risk and precedent_avail
+    req.action_descriptor.system_risk = 0.8
+    req.action_descriptor.precedent_avail = 0.2
+    
+    resp = process_assessment(req)
+    
+    # system_risk = 0.8, consequence_scope = 0.2 (reporting_ui defaults to 0.2 in engine), reversibility = 0.1, precedent_avail = 0.2, visibility = 0.3
+    # risk_score = 0.3*0.8 + 0.25*0.2 + 0.15*0.1 + 0.15*0.2 + 0.15*0.3 = 0.24 + 0.05 + 0.015 + 0.03 + 0.045 = 0.38 (LOW)
+    assert abs(resp.risk_score - 0.38) < 1e-5
+    assert resp.risk_band == RiskBand.LOW
+    assert resp.system_risk == 0.8
+    assert resp.precedent_avail == 0.2
+    assert resp.justification.system_risk == 0.8
+    assert resp.justification.precedent_avail == 0.2

@@ -16,11 +16,13 @@ def map_reversibility(hint: ReversibilityHint) -> float:
     }
     return mapping.get(hint, 1.0)
 
-def calculate_risk(request: AssessmentRequest) -> Tuple[float, RiskBand]:
+def calculate_risk(request: AssessmentRequest) -> Tuple[float, RiskBand, float, float]:
     # system_area_risk: defaults to 0.5 if not found in config or for POC
-    system_risk = config.get_system_risk(request.action_descriptor.target_scope)
+    system_risk = request.action_descriptor.system_risk
     if system_risk is None:
-        system_risk = 0.5
+        system_risk = config.get_system_risk(request.action_descriptor.target_scope)
+        if system_risk is None:
+            system_risk = 0.5
 
     # action_consequence_scope mapping from target_scope
     scope_mapping = {
@@ -35,7 +37,9 @@ def calculate_risk(request: AssessmentRequest) -> Tuple[float, RiskBand]:
     reversibility_score = map_reversibility(request.action_descriptor.reversibility_hint)
     
     # precedent_availability: For POC, we set it to 1.0.
-    precedent_avail = 1.0
+    precedent_avail = request.action_descriptor.precedent_avail
+    if precedent_avail is None:
+        precedent_avail = 1.0
     
     # stakeholder_visibility: For POC, we take individual-contributor-visible (0.3).
     visibility = 0.3
@@ -57,7 +61,7 @@ def calculate_risk(request: AssessmentRequest) -> Tuple[float, RiskBand]:
     else:
         band = RiskBand.HIGH
         
-    return risk_score, band
+    return risk_score, band, system_risk, precedent_avail
 
 def classify_complexity(request: AssessmentRequest) -> Tuple[ComplexityLevel, ComplexityLevel]:
     # 1. Cognitive Complexity
@@ -121,7 +125,7 @@ def evaluate_rules(
 
 def process_assessment(request: AssessmentRequest) -> AssessmentResponse:
     # 1. Calculations
-    risk_score, risk_band = calculate_risk(request)
+    risk_score, risk_band, system_risk, precedent_avail = calculate_risk(request)
     cognitive_complexity, operational_complexity = classify_complexity(request)
     
     # platform_confidence is set to 0.3 for POC
@@ -142,7 +146,9 @@ def process_assessment(request: AssessmentRequest) -> AssessmentResponse:
         cognitive_complexity=cognitive_complexity,
         operational_complexity=operational_complexity,
         platform_confidence=platform_confidence,
-        rule_matched=rule_matched
+        rule_matched=rule_matched,
+        system_risk=system_risk,
+        precedent_avail=precedent_avail
     )
     
     response = AssessmentResponse(
@@ -158,7 +164,9 @@ def process_assessment(request: AssessmentRequest) -> AssessmentResponse:
         transformation_phase_modifier=None,
         formula_version=config.get_formula_version(),
         assessed_at=datetime.now(timezone.utc).isoformat(),
-        assessor_identity="cas-worker-01" # Mock identity for Phase 1
+        assessor_identity="cas-worker-01", # Mock identity for Phase 1
+        system_risk=system_risk,
+        precedent_avail=precedent_avail
     )
     
     # 4. Synchronous Audit Transaction
