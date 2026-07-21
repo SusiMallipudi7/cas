@@ -15,6 +15,7 @@ class ActionType(str, Enum):
     DOCUMENTATION = "Documentation"
     CODE_REVIEW = "Code Review"
     GENERATE_LOCATORS = "generateLocators"
+    EVALUATE = "evaluate"
     OTHER = "Other"
 
 class ReversibilityHint(str, Enum):

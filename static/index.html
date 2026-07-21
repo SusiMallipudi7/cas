@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,7 +24,7 @@
             margin: 0 auto;
             background: white;
             border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             overflow: hidden;
         }
 
@@ -160,8 +161,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .result {
@@ -191,10 +197,25 @@
             margin: 10px 0;
         }
 
-        .zone-1 { background: #2ecc71; color: white; }
-        .zone-2 { background: #f39c12; color: white; }
-        .zone-3 { background: #e67e22; color: white; }
-        .zone-4 { background: #e74c3c; color: white; }
+        .zone-1 {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .zone-2 {
+            background: #f39c12;
+            color: white;
+        }
+
+        .zone-3 {
+            background: #e67e22;
+            color: white;
+        }
+
+        .zone-4 {
+            background: #e74c3c;
+            color: white;
+        }
 
         .justification {
             background: white;
@@ -254,6 +275,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -282,6 +304,7 @@
                         <option value="Documentation">Documentation</option>
                         <option value="Code Review">Code Review</option>
                         <option value="generateLocators">generateLocators</option>
+                        <option value="evaluate">evaluate</option>
                         <option value="Other">Other</option>
                     </select>
                     <div class="helper-text">Select the QE activity type</div>
@@ -307,19 +330,19 @@
                 <!-- Knowledge Dependencies -->
                 <div class="form-group">
                     <label for="knowledgeDeps">
-                        Knowledge Dependencies: <span id="sliderValue">0.5</span>
+                        Knowledge Dependencies <span class="optional">(Hold Ctrl/Cmd to select multiple)</span>
                     </label>
-                    <input 
-                        type="range" 
-                        id="knowledgeDeps" 
-                        name="knowledgeDeps" 
-                        min="0" 
-                        max="1" 
-                        step="0.1" 
-                        value="0.5"
-                        style="width: 100%; cursor: pointer;"
-                    >
-                    <div class="helper-text">Move slider from 0.0 to 1.0 (representing density of dependencies)</div>
+                    <select id="knowledgeDeps" name="knowledgeDeps" multiple style="height: 150px;">
+                        <option value="User Story">User Story</option>
+                        <option value="Acceptance Criteria">Acceptance Criteria</option>
+                        <option value="System Architecture">System Architecture</option>
+                        <option value="Database Schema">Database Schema</option>
+                        <option value="API Specification">API Specification</option>
+                        <option value="Test Plan">Test Plan</option>
+                        <option value="UI Wireframe">UI Wireframe</option>
+                        <option value="Code Diff">Code Diff</option>
+                    </select>
+                    <div class="helper-text">Select one or more artifacts required for the action</div>
                 </div>
 
                 <!-- Reversibility Hint -->
@@ -397,13 +420,6 @@
             field.addEventListener('change', () => validateField(field));
         });
 
-        // Update slider label on input
-        const knowledgeDepsSlider = document.getElementById('knowledgeDeps');
-        const sliderValueLabel = document.getElementById('sliderValue');
-        knowledgeDepsSlider.addEventListener('input', (e) => {
-            sliderValueLabel.textContent = e.target.value;
-        });
-
         // Form submission
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -426,8 +442,9 @@
             loading.classList.add('show');
             submitBtn.disabled = true;
 
-            // Parse knowledge dependencies as float
-            const knowledgeDeps = parseFloat(knowledgeDepsSlider.value);
+            // Parse knowledge dependencies as list of strings from multi-select
+            const knowledgeDepsSelect = document.getElementById('knowledgeDeps');
+            const knowledgeDeps = Array.from(knowledgeDepsSelect.selectedOptions).map(opt => opt.value);
 
             // Build request payload
             const payload = {
@@ -512,4 +529,5 @@
         }
     </script>
 </body>
+
 </html>
