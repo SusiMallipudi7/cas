@@ -1,0 +1,190 @@
+================================================================================
+CONTEXT AUTONOMY SERVICE (CAS) - PHASE 2 WORKFLOW & CALIBRATION EXPLANATION
+================================================================================
+
+1. DIRECT ANSWER: DOES HUMAN FEEDBACK INCREASE THE CALIBRATION SIGNAL?
+--------------------------------------------------------------------------------
+YES! Absolutely.
+
+- Every time an operational feedback payload (such as Human Escalation Resolution, 
+  Automated Execution Outcome, or Retrospective Flag) is ingested for a UNIQUE 
+  assessment ID, the calibration signal count for that knowledge domain increases by +1.
+
+- Why is deduplication needed? 
+  If someone clicks or submits feedback multiple times for the SAME task/assessment ID 
+  ("req-123"), the system counts it ONCE and rejects duplicates. 
+  Each UNIQUE task outcome adds +1 to the domain's calibration score!
+
+
+2. SIMPLE WORKFLOW OVERVIEW (THE BIG PICTURE)
+--------------------------------------------------------------------------------
+CAS is a deterministic decision engine for AI automation. 
+It operates in two separate, clean steps:
+
+  STEP 1: ASSESS ACTION (Evaluation)
+  ---------------------------------
+  - An automated agent asks CAS: "Can I run this action automatically?"
+  - CAS calculates Risk & Complexity and assigns an Autonomy Zone (Zone 1 to Zone 4).
+  - IMPORTANT: Calling /v1/assess ONLY READS the calibration count. It NEVER increases it!
+
+  STEP 2: FEEDBACK INGESTION (Calibration & Learning)
+  --------------------------------------------------
+  - After the action runs (or is reviewed by a human), downstream feedback is sent back to CAS.
+  - CAS validates the feedback payload, checks for duplicates, and increments the 
+    domain's Calibration Counter (+1).
+  - Once a domain hits 20 calibration signals, it becomes "Calibration Ready" to move 
+    from Conservative Phase to Progressive/Autonomous Phase!
+
+
+3. EXPLAINING THE OPERATIONAL FEEDBACK BUTTONS TO YOUR TEAM
+--------------------------------------------------------------------------------
+In real life, feedback comes from 3 different sources downstream:
+
+[Source 1: Execution Outcome Verification] (Automated Tasks)
+  - What it means: When an AI task in Zone 1 (Auto) or Zone 2 (Semi-Auto) completes.
+  - Buttons:
+    * "✓ Outcome: Success" -> Task executed cleanly in production without errors (+1 signal).
+    * "✗ Outcome: Failure" -> Task failed during execution (+1 signal).
+
+[Source 2: Human Escalation Resolution] (Human-in-the-Loop Tasks)
+  - What it means: When a high-risk task is routed to Zone 3 (Mandated Supervision), 
+    a human engineer must review and approve it.
+  - Buttons:
+    * "👤 Human: Warranted"   -> The human agrees it WAS necessary to ask them (+1 signal).
+    * "👤 Human: Unwarranted" -> The human says "AI could have done this safely without bothering me" (+1 signal).
+
+[Source 3: Retrospective Defect Flag] (After-the-Fact Feedback)
+  - What it means: Days or weeks later, a QA team finds a bug or evaluates past performance.
+  - Buttons:
+    * "🔍 Retro: Under-Cautious" -> AI was too bold and missed something (+1 signal).
+    * "🔍 Retro: Over-Cautious"  -> AI was too timid and asked for unnecessary human help (+1 signal).
+
+
+4. TEXT WORKFLOW DIAGRAM (COPY & PASTE FOR TEAM SLACK/TEAMS/DOCS)
+--------------------------------------------------------------------------------
+
+  +-------------------------------------------------------------------------+
+  |                        1. ACTION ASSESSMENT PHASE                       |
+  +-------------------------------------------------------------------------+
+                                       |
+                   [Agent sends POST /v1/assess payload]
+                                       |
+                                       v
+                     +-----------------------------------+
+                     |  CAS Engine evaluates Risk,       |
+                     |  Complexity & Calibration Count   |
+                     +-----------------------------------+
+                                       |
+                                       v
+                   +---------------------------------------+
+                   | Assigns Zone 1, 2, 3, or 4           |
+                   | (Reads current count, NO increment)   |
+                   +---------------------------------------+
+                                       |
+             +-------------------------+-------------------------+
+             |                                                   |
+             v                                                   v
+   [ZONE 1 / 2: Autonomous]                           [ZONE 3: Human Review]
+             |                                                   |
+   Task runs automatically                            Human engineer reviews task
+             |                                                   |
+             +-------------------------+-------------------------+
+                                       |
+                                       v
+  +-------------------------------------------------------------------------+
+  |                        2. FEEDBACK INGESTION PHASE                      |
+  +-------------------------------------------------------------------------+
+                                       |
+                  [Downstream sends POST /v1/calibration/signals]
+                                       |
+                                       v
+                    +-------------------------------------+
+                    | Deduplication Check (request_id)    |
+                    +-------------------------------------+
+                                       |
+             +-------------------------+-------------------------+
+             |                                                   |
+    [If duplicate ID]                                    [If new unique ID]
+             |                                                   |
+    ❌ Reject (400 Bad Request)                          ✅ Accept & Increment Counter
+             |                                            Domain Counter += 1
+             |                                                   |
+             |                                                   v
+             |                                  +---------------------------------+
+             |                                  | Total Domain Signals >= 20?     |
+             |                                  +---------------------------------+
+             |                                           |               |
+             |                                        (YES)             (NO)
+             |                                           |               |
+             |                                           v               v
+             |                                 [Domain Calibration    [Continue]
+             |                                  Ready Event Emitted]
+             +-------------------------------------------+
+
+
+5. WHAT ABOUT REPLICAS? (MULTI-NODE DEPLOYMENT & SYNCHRONIZATION)
+--------------------------------------------------------------------------------
+In a production environment, CAS runs multiple identical server instances 
+(called REPLICAS, e.g., cas-replica-01, cas-replica-02, cas-replica-03) 
+behind a load balancer for high availability, zero downtime, and scaling.
+
+Here is how replicas work together:
+
+A) Assessor Identity (Who processed the request?)
+   - Every CAS response includes `assessor_identity: "cas-replica-01"`. 
+   - This records exactly WHICH replica instance evaluated the assessment for audit trails.
+
+B) Minimum Replica Quorum (Safety Barrier)
+   - For global posture/phase transitions, CAS enforces `min_replicas = 3`.
+   - A phase progression cannot happen unless at least 3 active replicas confirm readiness. 
+     This prevents single-node glitches from accidentally changing global autonomy levels.
+
+C) Atomic Sync Across All Replicas (Zero Phase Drift)
+   - When a domain reaches 20 calibration signals and triggers a phase progression, 
+     the `ReplicaSyncCoordinator` forces an ATOMIC RELOAD across all active replicas.
+   - All replicas update their active posture phase simultaneously (`PENDING_RELOAD` -> `SYNCED`).
+   - If any node is out of sync, system readiness checks block traffic until all nodes match 100%.
+
+D) Where are Replicas storing data right now (without Cloud)?
+   - LOCAL / POC MODE (Current local server setup):
+     Replicas store everything IN-MEMORY inside the Python application process. 
+     A thread-safe registry (`ReplicaSyncCoordinator._replica_registry`) simulates 
+     the 3 replicas (`cas-replica-01`, `cas-replica-02`, `cas-replica-03`) locally 
+     using thread locks without needing any cloud database or Redis setup.
+
+   - PRODUCTION DEPLOYMENT (When deployed to production):
+     In production, state persistence & sync are backed by PostgreSQL / Redis 
+     using the included `init.sql` schema (`replica_sync_status`, `calibration_signals`, 
+     and `calibration_counters` tables).
+
+
+6. QUICK SUMMARY FOR TEAM MEETINGS
+--------------------------------------------------------------------------------
+1. Assessing a task DOES NOT change its score.
+2. Every valid feedback payload (including human review) DOES add +1 to the domain score.
+3. Submitting duplicate feedback for the same task ID is automatically blocked.
+4. At 20 signals, the system unlocks higher autonomy phases safely.
+5. All Replicas (nodes) sync posture changes atomically with a 3-node minimum quorum.
+================================================================================
+
+
+
+
+
+What you do:
+  - Fill the form
+  - Click "Assess Action"
+What happens:
+  1. UI calls POST /v1/assess
+  2. Engine calculates risk, complexity, confidence
+  3. Engine picks a BASE zone (Zone 1–4)
+  4. Posture engine may SHIFT that zone based on the current PHASE
+  5. Response shows:
+       - original_zone
+       - shifted_zone
+       - calibration_signal_count  (just a READ of current count)
+  6. An audit log is written
+IMPORTANT:
+  Assessing does NOT create a calibration signal.
+  The counter does NOT go up from Assess alone.
+  That is why you often still see 0 / 20.

@@ -197,6 +197,66 @@
             margin: 10px 0;
         }
 
+        .zone-comparison {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0 20px;
+        }
+
+        .zone-arrow {
+            color: #667eea;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .zone-status {
+            width: 100%;
+            color: #4a5568;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .calibration-card {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            margin: 15px 0;
+            padding: 15px;
+        }
+
+        .calibration-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .calibration-count {
+            background: #667eea;
+            color: white;
+            border-radius: 18px;
+            padding: 7px 13px;
+            font-size: 16px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .json-viewer {
+            background: #1a202c;
+            color: #e2e8f0;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 15px;
+            max-height: 350px;
+            overflow: auto;
+            padding: 15px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
         .zone-1 {
             background: #2ecc71;
             color: white;
@@ -382,7 +442,7 @@
     <div class="container">
         <div class="header">
             <h1>🤖 Context Autonomy Service (CAS)</h1>
-            <p>Phase 1 POC - Assessment Form</p>
+            <p>Phase 2 POC - Assessment Form</p>
         </div>
 
         <div class="form-container">
@@ -427,6 +487,21 @@
                     </select>
                     <div class="helper-text">Impact scope of the action</div>
                     <div class="error" id="targetScopeError">Please select a scope</div>
+                </div>
+
+                <!-- Knowledge Domain -->
+                <div class="form-group">
+                    <label for="knowledgeDomain">
+                        Knowledge Domain <span class="required">*</span>
+                    </label>
+                    <input type="text" id="knowledgeDomain" name="knowledgeDomain"
+                        value="general" required>
+                    <div class="helper-text">
+                        Domain used to look up the active calibration signal count
+                    </div>
+                    <div class="error" id="knowledgeDomainError">
+                        Please enter a knowledge domain
+                    </div>
                 </div>
 
                 <!-- Knowledge Dependencies -->
@@ -501,13 +576,64 @@
             <div class="result" id="result">
                 <h3>📊 Assessment Result</h3>
                 <div>
-                    <strong>Assigned Zone:</strong>
-                    <div class="zone-badge" id="zoneBadge"></div>
+                    <strong>Zone Comparison:</strong>
+                    <div class="zone-comparison">
+                        <div class="zone-badge" id="originalZoneBadge"></div>
+                        <span class="zone-arrow" id="zoneArrow">➔</span>
+                        <div class="zone-badge" id="shiftedZoneBadge"></div>
+                        <div class="zone-status" id="zoneStatus"></div>
+                    </div>
+                </div>
+
+                <div class="calibration-card">
+                    <div class="calibration-header">
+                        <div>
+                            <strong>Calibration Signals Summary</strong>
+                            <div class="helper-text" id="calibrationDomain"></div>
+                        </div>
+                        <div class="calibration-count" id="calibrationCount">0 / 20</div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar-fill" id="calibrationProgress"
+                            role="progressbar" aria-valuemin="0" aria-valuemax="20"></div>
+                    </div>
+                    
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #edf2f7;">
+                        <h4 style="font-size: 13px; color: #4a5568; margin-bottom: 8px;">⚡ SIMULATE DOWNSTREAM OPERATIONAL FEEDBACK (Ingest Signal)</h4>
+                        <div style="font-size: 11px; color: #718096; margin-bottom: 10px;">
+                            Active Assessment ID: <code id="activeRequestId" style="background: #edf2f7; padding: 2px 5px; border-radius: 3px; font-weight: bold; color: #2b6cb0;"></code>
+                        </div>
+
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                            <button type="button" class="btn-feedback" data-signal-type="outcome" data-outcome="success" style="padding: 6px 12px; font-size: 12px; background: #38a169; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                                ✓ Outcome: Success
+                            </button>
+                            <button type="button" class="btn-feedback" data-signal-type="outcome" data-outcome="failure" style="padding: 6px 12px; font-size: 12px; background: #e53e3e; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                                ✗ Outcome: Failure
+                            </button>
+                            <button type="button" class="btn-feedback" data-signal-type="human_feedback" data-outcome="warranted" style="padding: 6px 12px; font-size: 12px; background: #3182ce; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                                👤 Human: Warranted
+                            </button>
+                            <button type="button" class="btn-feedback" data-signal-type="human_feedback" data-outcome="unwarranted" style="padding: 6px 12px; font-size: 12px; background: #dd6b20; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                                👤 Human: Unwarranted
+                            </button>
+                            <button type="button" class="btn-feedback" data-signal-type="retrospective" data-outcome="under_cautious" style="padding: 6px 12px; font-size: 12px; background: #805ad5; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                                🔍 Retro: Under-Cautious
+                            </button>
+                        </div>
+
+                        <div id="signalStatus" style="display: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;"></div>
+                    </div>
                 </div>
 
                 <div class="justification">
                     <h4>JUSTIFICATION</h4>
                     <div class="justification-grid" id="justificationGrid"></div>
+                </div>
+
+                <div class="justification">
+                    <h4>RAW RESPONSE JSON</h4>
+                    <pre class="json-viewer" id="responseJson"></pre>
                 </div>
             </div>
         </div>
@@ -537,7 +663,7 @@
         }
 
         // Add real-time validation
-        ['actionType', 'targetScope', 'reversibilityHint'].forEach(fieldId => {
+        ['actionType', 'targetScope', 'knowledgeDomain', 'reversibilityHint'].forEach(fieldId => {
             const field = document.getElementById(fieldId);
             field.addEventListener('blur', () => validateField(field));
             field.addEventListener('change', () => validateField(field));
@@ -596,9 +722,10 @@
             // Validate all required fields
             const actionType = document.getElementById('actionType');
             const targetScope = document.getElementById('targetScope');
+            const knowledgeDomain = document.getElementById('knowledgeDomain');
             const reversibilityHint = document.getElementById('reversibilityHint');
 
-            const isValid = [actionType, targetScope, reversibilityHint]
+            const isValid = [actionType, targetScope, knowledgeDomain, reversibilityHint]
                 .every(field => validateField(field));
 
             if (!isValid) return;
@@ -626,7 +753,8 @@
                     knowledge_dependencies: knowledgeDeps,
                     reversibility_hint: reversibilityHint.value,
                     system_risk: parseFloat(systemRiskInput.value),
-                    precedent_avail: parseFloat(precedentAvailInput.value)
+                    precedent_avail: parseFloat(precedentAvailInput.value),
+                    knowledge_domain: knowledgeDomain.value.trim()
                 },
                 context_snapshot_ref: `snapshot-${Date.now()}`,
                 caller_service: "cas-poc-ui",
@@ -662,10 +790,43 @@
         });
 
         function displayResults(data) {
-            // Set zone badge
-            const zoneBadge = document.getElementById('zoneBadge');
-            zoneBadge.textContent = data.zone;
-            zoneBadge.className = 'zone-badge zone-' + data.zone.split('_')[1];
+            const originalZoneBadge = document.getElementById('originalZoneBadge');
+            const shiftedZoneBadge = document.getElementById('shiftedZoneBadge');
+            const zoneArrow = document.getElementById('zoneArrow');
+            const zoneStatus = document.getElementById('zoneStatus');
+            const shifted = data.original_zone !== data.shifted_zone;
+
+            originalZoneBadge.textContent = data.original_zone;
+            originalZoneBadge.className =
+                'zone-badge zone-' + data.original_zone.split('_')[1];
+            shiftedZoneBadge.textContent = data.shifted_zone;
+            shiftedZoneBadge.className =
+                'zone-badge zone-' + data.shifted_zone.split('_')[1];
+
+            if (shifted) {
+                zoneArrow.style.display = 'inline';
+                shiftedZoneBadge.style.display = 'inline-block';
+                zoneStatus.textContent =
+                    `${data.original_zone} ➔ ${data.shifted_zone} (Shifted via CONSERVATIVE Posture)`;
+            } else {
+                zoneArrow.style.display = 'none';
+                shiftedZoneBadge.style.display = 'none';
+                zoneStatus.textContent =
+                    `${data.original_zone} (Unshifted / ${data.active_phase})`;
+            }
+
+            const signalCount = Math.max(
+                0,
+                Math.min(20, data.calibration_signal_count)
+            );
+            const domain = document.getElementById('knowledgeDomain').value.trim();
+            document.getElementById('calibrationDomain').textContent =
+                `Domain: ${domain}`;
+            document.getElementById('calibrationCount').textContent =
+                `${data.calibration_signal_count} / 20`;
+            const calibrationProgress = document.getElementById('calibrationProgress');
+            calibrationProgress.style.width = `${(signalCount / 20) * 100}%`;
+            calibrationProgress.setAttribute('aria-valuenow', signalCount);
 
             // Build justification grid
             const justificationGrid = document.getElementById('justificationGrid');
@@ -694,11 +855,85 @@
                     <div class="metric-label">Rule Matched</div>
                     <div class="metric-value">Rule ${data.justification.rule_matched}</div>
                 </div>
+                <div class="metric">
+                    <div class="metric-label">Original Base Zone</div>
+                    <div class="metric-value">${data.justification.original_zone}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Shifted Final Zone</div>
+                    <div class="metric-value">${data.justification.shifted_zone}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Calibration Signals</div>
+                    <div class="metric-value">${data.justification.calibration_signal_count} / 20</div>
+                </div>
             `;
 
+            document.getElementById('activeRequestId').textContent = data.request_id;
+            const signalStatus = document.getElementById('signalStatus');
+            signalStatus.style.display = 'none';
+
+            document.getElementById('responseJson').textContent =
+                JSON.stringify(data, null, 2);
             result.classList.add('show');
             result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
+
+        document.querySelectorAll('.btn-feedback').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const domain = document.getElementById('knowledgeDomain').value.trim();
+                const actionType = document.getElementById('actionType').value.trim();
+                const requestId = document.getElementById('activeRequestId').textContent;
+                const signalStatus = document.getElementById('signalStatus');
+
+                if (!domain || !actionType || !requestId) {
+                    alert("Please complete an assessment request first.");
+                    return;
+                }
+
+                const signalType = btn.getAttribute('data-signal-type');
+                const outcome = btn.getAttribute('data-outcome');
+
+                try {
+                    const res = await fetch('/v1/calibration/signals', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            knowledge_domain: domain,
+                            action_type: actionType,
+                            signal_type: signalType,
+                            outcome: outcome,
+                            request_id: requestId,
+                            assignment_id: requestId
+                        })
+                    });
+
+                    const resData = await res.json();
+
+                    signalStatus.style.display = 'block';
+                    if (res.ok) {
+                        signalStatus.style.background = '#c6f6d5';
+                        signalStatus.style.color = '#22543d';
+                        signalStatus.textContent = `✓ Operational Signal (${outcome.toUpperCase()}) ingested for Assessment ID ${requestId}. Counter incremented!`;
+                        
+                        // Re-trigger assessment form submission to show updated count & potential posture progression
+                        setTimeout(() => {
+                            form.dispatchEvent(new Event('submit'));
+                        }, 600);
+                    } else {
+                        signalStatus.style.background = '#fed7d7';
+                        signalStatus.style.color = '#742a2a';
+                        signalStatus.textContent = `⚠️ Rejected: ${resData.detail || "Signal Ingestion Failed"}`;
+                    }
+                } catch (err) {
+                    console.error("Signal ingestion error", err);
+                    signalStatus.style.display = 'block';
+                    signalStatus.style.background = '#fed7d7';
+                    signalStatus.style.color = '#742a2a';
+                    signalStatus.textContent = `❌ Network Error: Failed to ingest signal`;
+                }
+            });
+        });
     </script>
 </body>
 

@@ -3,10 +3,14 @@ from typing import Tuple, Dict
 
 from models import (
     AssessmentRequest, AssessmentResponse, Justification, AutonomyZone,
-    ReversibilityHint, RiskBand, ComplexityLevel
+    ReversibilityHint, RiskBand, ComplexityLevel, TransformationPhase
 )
 from config import config
 from audit import emit_audit_fragment
+from calibration import calibration_service
+from phase import phase_state
+from posture import posture_engine
+from settings import get_settings
 
 def map_reversibility(hint: ReversibilityHint) -> float:
     mapping = {
@@ -132,12 +136,31 @@ def process_assessment(request: AssessmentRequest) -> AssessmentResponse:
     platform_confidence = 0.3
     
     # 2. Rule Evaluation
-    zone, rule_matched = evaluate_rules(
+    base_zone, rule_matched = evaluate_rules(
         platform_confidence=platform_confidence,
         cognitive_complexity=cognitive_complexity,
         operational_complexity=operational_complexity,
         risk_band=risk_band
     )
+
+    active_phase = phase_state.get_active_phase()
+    zone, transformation_phase_modifier = posture_engine.apply_posture(
+        base_zone=base_zone,
+        phase=active_phase,
+        risk_band=risk_band,
+        cognitive_complexity=cognitive_complexity,
+        operational_complexity=operational_complexity,
+    )
+
+    knowledge_domain = (
+        request.action_descriptor.knowledge_domain
+        or request.action_descriptor.target_scope
+    )
+    calibration_signal_count = calibration_service.get_domain_summary(
+        knowledge_domain
+    ).total_signals
+    original_zone = base_zone.value
+    shifted_zone = zone.value
     
     # 3. Construct Response Payload
     justification = Justification(
@@ -148,12 +171,16 @@ def process_assessment(request: AssessmentRequest) -> AssessmentResponse:
         platform_confidence=platform_confidence,
         rule_matched=rule_matched,
         system_risk=system_risk,
-        precedent_avail=precedent_avail
+        precedent_avail=precedent_avail,
+        original_zone=original_zone,
+        shifted_zone=shifted_zone,
+        calibration_signal_count=calibration_signal_count,
     )
     
     response = AssessmentResponse(
         request_id=request.request_id,
         zone=zone,
+        base_zone=base_zone,
         justification=justification,
         risk_score=risk_score,
         risk_band=risk_band,
@@ -161,12 +188,16 @@ def process_assessment(request: AssessmentRequest) -> AssessmentResponse:
         operational_complexity=operational_complexity,
         platform_confidence=platform_confidence,
         staleness_flag=False,
-        transformation_phase_modifier=None,
+        transformation_phase_modifier=transformation_phase_modifier,
+        active_phase=active_phase,
         formula_version=config.get_formula_version(),
         assessed_at=datetime.now(timezone.utc).isoformat(),
-        assessor_identity="cas-worker-01", # Mock identity for Phase 1
+        assessor_identity=get_settings().replica_id,
         system_risk=system_risk,
-        precedent_avail=precedent_avail
+        precedent_avail=precedent_avail,
+        original_zone=original_zone,
+        shifted_zone=shifted_zone,
+        calibration_signal_count=calibration_signal_count,
     )
     
     # 4. Synchronous Audit Transaction
@@ -174,7 +205,15 @@ def process_assessment(request: AssessmentRequest) -> AssessmentResponse:
         request_payload=request.model_dump(mode='json'),
         response_payload=response.model_dump(mode='json'),
         formula_weights=config.get_weights(),
-        rule_matched=rule_matched
+        rule_matched=rule_matched,
+        posture_metadata={
+            "active_phase": active_phase.value,
+            "base_zone": original_zone,
+            "final_zone": shifted_zone,
+            "transformation_phase_modifier": transformation_phase_modifier,
+        },
+        original_zone=original_zone,
+        shifted_zone=shifted_zone,
     )
     
     # 5. Return mapped zone
