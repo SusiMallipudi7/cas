@@ -1,0 +1,57 @@
+================================================================================
+CONTEXT AUTONOMY SERVICE (CAS) - SCORE METRICS BREAKDOWN
+================================================================================
+
+1. USER-DRIVEN (DYNAMIC INPUTS FROM UI)
+--------------------------------------------------------------------------------
+- System Risk (system_risk): 
+  Set dynamically via the UI range slider (0.0 to 1.0, default 0.5) in index.html (lines 469-475).
+
+- Precedent Availability (precedent_avail): 
+  Set dynamically via the UI range slider (0.0 to 1.0, default 1.0) in index.html (lines 478-484).
+
+- Action Consequence Scope: 
+  Mapped dynamically from the user-selected Target Scope dropdown 
+  (enterprise-wide = 1.0, functional-area = 0.7, single-requirement = 0.4, intra-step = 0.2) in engine.py (lines 28-34).
+
+- Reversibility Score: 
+  Mapped dynamically from the user-selected Reversibility Hint dropdown 
+  (trivially reversible = 0.1, reversible with cost = 0.5, irreversible = 1.0) in engine.py (lines 11-17).
+
+- Cognitive Complexity: 
+  Evaluated dynamically based on user-selected Action Type (checks for analysis/RCA keywords) 
+  and the count of checked Knowledge Dependencies in engine.py (lines 68-82).
+
+- Operational Complexity: 
+  Evaluated dynamically based on Target Scope in engine.py (lines 85-93).
+
+- Overall Risk Score & Autonomy Zone: 
+  Calculated dynamically using the combined inputs against the engine's formula and decision matrix in engine.py (lines 47-125).
+
+
+2. HARDCODED / STATIC VALUES
+--------------------------------------------------------------------------------
+- Platform Confidence (platform_confidence): 
+  Hardcoded to 0.3 in engine.py (line 132).
+
+- Stakeholder Visibility (visibility): 
+  Hardcoded to 0.3 (individual-contributor-visible level) in engine.py (line 45).
+
+- Formula Weights: 
+  Fixed static weights configured in config.py (lines 22-28):
+    * system_area_risk: 0.30
+    * action_consequence_scope: 0.25
+    * reversibility: 0.15
+    * precedent_availability: 0.15
+    * stakeholder_visibility: 0.15
+
+- Assessor Identity (assessor_identity): 
+  Hardcoded mock string "cas-worker-01" in engine.py (line 167).
+
+- Staleness Flag (staleness_flag): 
+  Hardcoded to False in engine.py (line 163).
+
+- Fallback Defaults: 
+  If missing from payload, system_risk defaults to 0.5 (engine.py:25) 
+  and precedent_avail defaults to 1.0 (engine.py:41).
+================================================================================

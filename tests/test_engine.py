@@ -6,6 +6,12 @@ from models import (
 )
 from engine import process_assessment
 from config import config
+from tests.conftest import set_workflow_integration_phase
+
+
+@pytest.fixture(autouse=True)
+def workflow_integration_phase():
+    set_workflow_integration_phase()
 
 def get_base_request(target_scope="reporting_ui") -> AssessmentRequest:
     return AssessmentRequest(

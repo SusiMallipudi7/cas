@@ -38,11 +38,7 @@ coverage.xml
 .hypothesis/
 
 # IDEs and Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+.cursor/agents/
 
 # OS specific files
 Thumbs.db
