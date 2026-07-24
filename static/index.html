@@ -631,10 +631,7 @@
                     <div class="justification-grid" id="justificationGrid"></div>
                 </div>
 
-                <div class="justification">
-                    <h4>RAW RESPONSE JSON</h4>
-                    <pre class="json-viewer" id="responseJson"></pre>
-                </div>
+
             </div>
         </div>
     </div>
@@ -873,8 +870,7 @@
             const signalStatus = document.getElementById('signalStatus');
             signalStatus.style.display = 'none';
 
-            document.getElementById('responseJson').textContent =
-                JSON.stringify(data, null, 2);
+
             result.classList.add('show');
             result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
